@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <title>Document</title>
+        <style lang="text/css">
+            html, body {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                min-height: 332px;
+            }
+            body {
+                display: flex;
+                flex-flow: column nowrap;
+
+            }
+            header {
+                height: 60px;
+                width: 100%;
+                background-color: skyblue;
+            }
+            .main {
+                flex: 1;
+                display: flex;
+                flex-flow: row nowrap;
+            }
+            nav {
+                flex: 0 0 50px;
+                background-color: #e8e8e8;
+            }
+            section {
+                flex: 1;
+            }
+            footer {
+                height: 30px;
+                background-color: #000;
+                color: #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <header id="header"></header>
+        <div class="main">
+            <nav id="leftNav"></nav>
+            <section></section>
+        </div>
+        <footer></footer>
+    </body>
+    <script>
+        window.onload = function() {
+            console.log('222', 222)
+            // 当前盒子距离屏幕左边的距离：screenX - clientX
+            // 当前盒子距离屏幕上边的距离：screenY - clientY
+            const header = document.getElementById('header');
+            const leftNav = document.getElementById('leftNav');
+            let cpx; // 点击的时候鼠标相对于窗口水平方向的位置
+            let cpy; // 点击的时候鼠标相对于窗口垂直方向的位置
+
+            function send(x, y) {
+                console.log('x, y :', x, y);
+
+                if (window.external.getData) {
+                    window.external.getData(
+                        JSON.stringify({
+                            type: 8,
+                            status: 'move',
+                            xPos: x,
+                            yPos: y
+                        })
+                    );
+                }
+            }
+
+            function createMove(start = true) {
+                if (start) {
+                    window.onmousemove = function(event) {
+                        const {screenX, screenY, clientX, clientY} =
+                            event || {};
+
+                        send(
+                            Number.parseInt(screenX) - cpx,
+                            Number.parseInt(screenY) - cpy
+                        );
+                    };
+                }
+            }
+
+            function handleMouseDown(event) {
+                const {screenX, screenY, clientX, clientY} = event || {};
+                cpx = Number.parseInt(clientX); 
+                cpy = Number.parseInt(clientY); 
+                window.onmousemove = null;
+                createMove(true);
+            }
+
+            function handleMouseUp(event) {
+                if (!window.onmousemove) {
+                    return;
+                }
+                window.onmousemove = null;
+            }
+
+            header.onmousedown = function(event) {
+                handleMouseDown(event);
+                event.preventDefault();
+            };
+            document.onmouseup = function(event) {
+                handleMouseUp(event);
+            };
+            leftNav.onmousedown = function(event) {
+                handleMouseDown(event);
+                event.preventDefault();
+            };
+        };
+    </script>
+</html>
