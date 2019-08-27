@@ -50,20 +50,28 @@
         <footer></footer>
     </body>
     <script>
+        // 没有按任何按钮。
+        // events.button==1 鼠标左键
+        // events.button==2 鼠标右键
+        // events.button==3 鼠标左右键同时按下
+        // events.button==4 鼠标中键
+        // events.button==5 鼠标左键和中键同时按下
+        // events.button==6 鼠标右键和中键同时按下
+        // events.button==7 所有三个键都按下events
+        // 要是这个在运行时报错的话就用这个window.event
         window.onload = function() {
-            console.log('222', 222)
             // 当前盒子距离屏幕左边的距离：screenX - clientX
             // 当前盒子距离屏幕上边的距离：screenY - clientY
+            // 获取顶部dom、左边用户头像dom
             const header = document.getElementById('header');
-            const leftNav = document.getElementById('leftNav');
+            const leftNav = document.getElementById('userInfoLeft');
             let cpx; // 点击的时候鼠标相对于窗口水平方向的位置
             let cpy; // 点击的时候鼠标相对于窗口垂直方向的位置
-
+            // 定义 给端发送位置坐标方法
             function send(x, y) {
-                console.log('x, y :', x, y);
-
-                if (window.external.getData) {
-                    window.external.getData(
+                if (window.CefWebInstance && window.CefWebInstance.call) {
+                    window.CefWebInstance.call(
+                        'sendMsg2App',
                         JSON.stringify({
                             type: 8,
                             status: 'move',
@@ -73,43 +81,47 @@
                     );
                 }
             }
-
+            // 创建开始移动鼠标事件监听
             function createMove(start = true) {
                 if (start) {
                     window.onmousemove = function(event) {
-                        const {screenX, screenY, clientX, clientY} =
-                            event || {};
-
-                        send(
-                            Number.parseInt(screenX) - cpx,
-                            Number.parseInt(screenY) - cpy
-                        );
+                        if (event.buttons === 1) {
+                            const {screenX, screenY} = event || {};
+                            send(
+                                Number.parseInt(screenX) - cpx,
+                                Number.parseInt(screenY) - cpy
+                            );
+                        }
                     };
                 }
             }
-
+            // 当鼠标抬起的时候清空onmouseup，onmousemove事件的监听
+            function handleMouseUp() {
+                window.onmouseup = function() {
+                    if (!window.onmousemove) {
+                        return;
+                    }
+                    window.onmousemove = null;
+                    window.onmouseup = null;
+                };
+            }
+            // 当鼠标在指定区域按下的时候
             function handleMouseDown(event) {
-                const {screenX, screenY, clientX, clientY} = event || {};
-                cpx = Number.parseInt(clientX); 
-                cpy = Number.parseInt(clientY); 
-                window.onmousemove = null;
-                createMove(true);
-            }
-
-            function handleMouseUp(event) {
-                if (!window.onmousemove) {
-                    return;
+                if (event.buttons === 1) {
+                    const {clientX, clientY} = event || {};
+                    cpx = Number.parseInt(clientX);
+                    cpy = Number.parseInt(clientY);
+                    createMove(true);
+                    handleMouseUp();
                 }
-                window.onmousemove = null;
             }
-
+            // 鼠标在header区域按下时触发
             header.onmousedown = function(event) {
                 handleMouseDown(event);
                 event.preventDefault();
             };
-            document.onmouseup = function(event) {
-                handleMouseUp(event);
-            };
+
+            // 鼠标在左侧区域按下时触发
             leftNav.onmousedown = function(event) {
                 handleMouseDown(event);
                 event.preventDefault();
